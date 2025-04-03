@@ -6,27 +6,29 @@ TERMUX_PKG_VERSION="10.10.6"
 TERMUX_PKG_REVISION=3
 _FFMPEG_VERSION="7.0.2-9"
 TERMUX_PKG_SRCURL=( "https://github.com/jellyfin/jellyfin/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz"
-                    "https://github.com/jellyfin/jellyfin-ffmpeg/archive/refs/tags/v${_FFMPEG_VERSION}.tar.gz"
-                    "https://github.com/jellyfin/jellyfin-web/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz" )
+                    "https://github.com/jellyfin/jellyfin-ffmpeg/archive/refs/tags/v${_FFMPEG_VERSION}.tar.gz" )
 _GIT_URL=( "git+https://github.com/ericsink/cb.git"
            "git+https://github.com/ericsink/SQLitePCL.raw.git"
-           "git+https://github.com/mono/skia.git" )
+           "git+https://github.com/mono/skia.git"
+           "git+https://github.com/jellyfin/jellyfin-web.git" )
 _GIT_COMMIT=( "cd2922b8867e4360f0976601414bd24a3ad613d8"
-               "7521c274efb2b49855b192f17862e87964460bac"
-               "4bed689c9c9eb77a120c6a9d54af6a572c85d1c2" )
+              "7521c274efb2b49855b192f17862e87964460bac"
+              "4bed689c9c9eb77a120c6a9d54af6a572c85d1c2"
+              "c335a3024e436fb347078d4f657ba647647676e6" )
 _GIT_BRANCH=( "master"
               "no-xamarin"
-              "release/2.x" )
+              "release/2.x"
+              "v10.10.6" )
 _GIT_SHA256=( "1107df127ead66ace2baf92467fa10a8215371741e0b0b6a0580496ff1ae0bcf"
               "8cd1b773026da818c47c693cf7a4bb81ab927b869a0ce2c6abcdbbe38d79922b"
-              "46c733f05df257e4bec13c09b53e7ef39bb80f21acb435d206dce609f4175ab1" )
+              "46c733f05df257e4bec13c09b53e7ef39bb80f21acb435d206dce609f4175ab1"
+              "fae70a1a4b2b262f064a2d4abf0253a9be7982767d44c4746de146c8b00d4100" )
 TERMUX_PKG_SHA256=(
 	77aad87db2bf59bf25d1496c5fa92c92c93738d1a80fc6d53308db5850bf2818
 	ae4ea57516e606a73fd2745b21284c65d41d3851d05a2ac17c425d7488192ba0
-	690ed4f2e65137028896dbd77be41d5968d87203911ea5da53fa513bd370d2c7
 )
-TERMUX_PKG_BUILD_DEPENDS="aspnetcore-targeting-pack-8.0, dotnet-targeting-pack-8.0"
-TERMUX_PKG_DEPENDS="libc++, fontconfig, aspnetcore-runtime-8.0, dotnet-host, dotnet-runtime-8.0, sqlite, chromaprint, libdrm, libexpat, libpng, libwebp, freetype, libpciaccess, xcb-util-image, libxshmfence, libxpresent, libxfixes, libxrandr, zstd"
+TERMUX_PKG_BUILD_DEPENDS="aspnetcore-targeting-pack-8.0, dotnet-targeting-pack-8.0, libcairo, pango, libjpeg-turbo, giflib, librsvg"
+TERMUX_PKG_DEPENDS="libc++, fontconfig, aspnetcore-runtime-8.0, dotnet-host, dotnet-runtime-8.0, sqlite, libexpat, libpng, libwebp, freetype"
 TERMUX_PKG_SERVICE_SCRIPT=(
 	"jellyfin"
 	"${TERMUX_PREFIX}/bin/dotnet ${TERMUX_PREFIX}/share/jellyfin/jellyfin.dll --datadir ${TERMUX_ANDROID_HOME}/jellyfin"
@@ -42,7 +44,7 @@ termux_step_post_get_source() {
 		git clone -b "${_GIT_BRANCH[${_idx}]}" --depth 1 "${_GIT_URL[${_idx}]:4}"
 		pushd "$( printf "%s" "${_GIT_URL[${_idx}]}" | sed -E 's|^.*/(.*).git$|\1|' )"
 		git fetch --depth 1 origin "${_GIT_COMMIT[${_idx}]}"
-		git checkout "${_GIT_COMMIT[${_idx}]}"
+		git checkout -c advice.detachedHead=false "${_GIT_COMMIT[${_idx}]}"
 		_sha256sums["$_idx"]="$(find . -type f ! -path '*/.git/*' -print0 | xargs -0 sha256sum | LC_ALL=C sort | sha256sum | awk '{print $1}')"
 		! [ "${_sha256sums["$_idx"]}" = "${_GIT_SHA256[${_idx}]}" ] && _error=1;
 		popd
@@ -66,6 +68,10 @@ termux_step_post_get_source() {
 }
 termux_step_pre_configure() {
 	termux_setup_dotnet && termux_setup_gn
+	pushd jellyfin-web
+	npm run build:production
+	cp -R ./dist "$TERMUX_PKG_BUILDDIR/jellyfin-web"
+	popd
 	local _target_cpu=""
 	if [ "$TERMUX_ARCH" = "aarch64" ]; then
 		_target_cpu="arm64"
@@ -233,7 +239,7 @@ termux_step_make() {
 termux_step_make_install() {
 	chmod 0700 "${TERMUX_PKG_BUILDDIR}/build"
 	find "${TERMUX_PKG_BUILDDIR}/build" -name '*.xml' -type f -exec rm '{}' +
-	find "$TERMUX_PKG_BUILDDIR" -maxdepth 1 -type f -exec mv -t "${TERMUX_PKG_BUILDDIR}/build" '{}' +
+	find "$TERMUX_PKG_BUILDDIR" -maxdepth 1 \( -type f -o -name 'jellyfin-web' \) -exec mv -t "${TERMUX_PKG_BUILDDIR}/build" '{}' +
 	find "${TERMUX_PKG_BUILDDIR}/build" ! \( -name '*.so' -o -name 'jellyfin' -o -type d \) -exec chmod 0600 '{}' \;
 	find "${TERMUX_PKG_BUILDDIR}/build" \( -name 'jellyfin' -o -name '*.so' -o -type d \) -exec chmod 0700 '{}' \;
 	local _i=""
@@ -253,4 +259,3 @@ termux_step_make_install() {
 # https://github.com/jellyfin/jellyfin-ffmpeg/blob/jellyfin/builder/build.sh
 # https://github.com/termux/termux-packages/tree/master/packages/ffmpeg
 # Note: All patches for Jellyfin-FFMPEG should be based off the patched version, see termux_step_post_get_source
-# TODO: jellyfin-web, either subpackage or bundled
