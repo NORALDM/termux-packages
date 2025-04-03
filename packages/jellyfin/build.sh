@@ -120,7 +120,7 @@ termux_step_pre_configure() {
 	extra_ldflags=[ '-static-libstdc++', '-Wl,--no-undefined', '-Wl,-z,max-page-size=16384' ] \
 	is_official_build=true \
 	extra_asmflags+=[ '-no-integrated-as', '-I${TERMUX_PREFIX}/include' ] \
-	extra_cflags+=[ '-I${TERMUX_PREFIX}/include', $(pkg-config --cflags freetype2 libpng libwebp expat | awk '{for (i=1;i<NF;i++) { printf "\"%s\", ",$i}; printf "\"%s\"",$i}') ] \
+	extra_cflags+=[ '-Wno-macro-redefined', '-I${TERMUX_PREFIX}/include', $(pkg-config --cflags freetype2 libpng libwebp expat | awk '{for (i=1;i<NF;i++) { printf "\"%s\", ",$i}; printf "\"%s\"",$i}') ] \
 	extra_ldflags+=[ '-L${TERMUX_PREFIX}/lib', '-Wl,-rpath,${TERMUX_PREFIX}/lib', $(pkg-config --libs freetype2 libpng libwebp expat | awk '{for (i=1;i<NF;i++) { printf "\"%s\", ",$i}; printf "\"%s\"",$i}') ]"
 	_args="$(printf "%s\n" "${_args_pre}" | sed "s/'/\\\"/g" | sed "s/\\t//g")"
 
@@ -142,7 +142,7 @@ termux_step_pre_configure() {
 	extra_ldflags=[ '-static-libstdc++', '-Wl,--no-undefined', '-Wl,-z,max-page-size=16384' ] \
 	is_official_build=true \
 	extra_asmflags+=[ '-no-integrated-as', '-I${TERMUX_PREFIX}/include' ] \
-	extra_cflags+=[ '-I${TERMUX_PREFIX}/include' ] \
+	extra_cflags+=[ '-Wno-macro-redefined', '-I${TERMUX_PREFIX}/include' ] \
 	extra_ldflags+=[ '-L${TERMUX_PREFIX}/lib', '-Wl,-rpath,${TERMUX_PREFIX}/lib' ]"
 	_args="$(printf "%s\n" "${_args_pre}" | sed "s/'/\\\"/g" | sed "s/\\t//g")"
 
