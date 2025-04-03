@@ -227,9 +227,7 @@ EOF
 }
 
 termux_step_make() {
-	pushd "$TERMUX_PKG_SRCDIR" && ls
 	dotnet publish "$TERMUX_PKG_SRCDIR"/Jellyfin.Server --configuration Release --runtime "$DOTNET_TARGET_NAME" --output "$TERMUX_PKG_BUILDDIR"/build --no-self-contained -p:DebugType=None
-	popd
 }
 
 termux_step_make_install() {
