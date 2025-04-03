@@ -5,6 +5,7 @@ on:
     branches:
     - master
     - dev
+    - dev-test
     - 'dev/**'
     paths:
     - 'packages/**'
@@ -219,8 +220,32 @@ jobs:
           ./scripts/setup-ubuntu.sh
           sudo apt install ninja-build
           ./scripts/free-space.sh
-        fi
+        else
+          BUILD_MOUNT_PATH=/var/lib/docker_mountpoint
+          sudo mkdir -p "${BUILD_MOUNT_PATH}"
+          VG_NAME=docker_vg
+          ROOT_FREE_KB=$(df --block-size=1024 --output=avail / | tail -1)
+          ROOT_RESERVE_KB=$(( 4 * 1024 * 1024 ))
+          ROOT_LVM_VOL_BYTES=$(( ($ROOT_FREE_KB - $ROOT_RESERVE_KB) * 1024))
+          sudo touch /lvm.img && sudo fallocate -z -l "${ROOT_LVM_VOL_BYTES}" /lvm.img
+          export ROOT_LOOP_DEV=$(sudo losetup --find --show /lvm.img )
+          sudo pvcreate -f "${ROOT_LOOP_DEV}"
 
+          sudo swapoff /mnt/swapfile
+          sudo rm -f /mnt/swapfile
+          TMP_FREE_KB="$(df --block-size=1024 --output=avail /mnt | tail -1)"
+          TMP_LVM_SIZE_BYTES="$(( $TMP_FREE_KB * 1024 ))"
+          sudo touch /mnt/lvm.img && sudo fallocate -z -l "${TMP_LVM_SIZE_BYTES}" /mnt/lvm.img
+          export TMP_LOOP_DEV="$(sudo losetup --find --show /mnt/lvm.img)"
+          sudo pvcreate -f "${TMP_LOOP_DEV}"
+
+          sudo vgcreate "${VG_NAME}" "${TMP_LOOP_DEV}" "${ROOT_LOOP_DEV}"
+          sudo lvcreate -l 100%FREE -n docker_lv "${VG_NAME}"
+          sudo mkfs.ext4 -Enodiscard -m0 "/dev/mapper/${VG_NAME}-docker_lv"
+          sudo mount "/dev/mapper/${VG_NAME}-docker_lv" "${BUILD_MOUNT_PATH}"
+          sudo chown -R runner:runner "${BUILD_MOUNT_PATH}"
+          sudo systemctl stop docker && find /var/lib/docker/ -exec sudo mv -t /var/lib/docker_mountpoint/ '{}' + && echo '{ "data-root": "/var/lib/docker_mountpoint" }' | sudo tee /etc/docker/daemon.json && sudo systemctl start docker
+        fi
     - name: Build packages
       env:
         DOCKER_BUILD: ${{ steps.build-info.outputs.docker-build }}
