@@ -44,7 +44,7 @@ termux_step_post_get_source() {
 		git clone -b "${_GIT_BRANCH[${_idx}]}" --depth 1 "${_GIT_URL[${_idx}]:4}"
 		pushd "$( printf "%s" "${_GIT_URL[${_idx}]}" | sed -E 's|^.*/(.*).git$|\1|' )"
 		git fetch --depth 1 origin "${_GIT_COMMIT[${_idx}]}"
-		git checkout -c advice.detachedHead=false "${_GIT_COMMIT[${_idx}]}"
+		git -c advice.detachedHead=false checkout "${_GIT_COMMIT[${_idx}]}"
 		_sha256sums["$_idx"]="$(find . -type f ! -path '*/.git/*' -print0 | xargs -0 sha256sum | LC_ALL=C sort | sha256sum | awk '{print $1}')"
 		! [ "${_sha256sums["$_idx"]}" = "${_GIT_SHA256[${_idx}]}" ] && _error=1;
 		popd
