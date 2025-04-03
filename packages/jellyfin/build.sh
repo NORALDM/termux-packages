@@ -3,7 +3,7 @@ TERMUX_PKG_DESCRIPTION="A free media system for organizing and streaming media"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
 TERMUX_PKG_VERSION="10.10.6"
-TERMUX_PKG_REVISION=2
+TERMUX_PKG_REVISION=3
 _FFMPEG_VERSION="7.0.2-9"
 TERMUX_PKG_SRCURL=( "https://github.com/jellyfin/jellyfin/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz"
                     "https://github.com/jellyfin/jellyfin-ffmpeg/archive/refs/tags/v${_FFMPEG_VERSION}.tar.gz"

@@ -244,7 +244,7 @@ jobs:
           sudo mkfs.ext4 -Enodiscard -m0 "/dev/mapper/${VG_NAME}-docker_lv"
           sudo mount "/dev/mapper/${VG_NAME}-docker_lv" "${BUILD_MOUNT_PATH}"
           sudo chown -R runner:runner "${BUILD_MOUNT_PATH}"
-          sudo systemctl stop docker && sudo find /var/lib/docker/ -maxdepth 1 -exec sudo mv -t /var/lib/docker_mountpoint/ '{}' + && echo '{ "data-root": "/var/lib/docker_mountpoint" }' | sudo tee /etc/docker/daemon.json && sudo systemctl start docker
+          sudo systemctl stop docker docker.socket && sudo rsync -aPq /var/lib/docker/ /var/lib/docker_mountpoint && echo '{ "data-root": "/var/lib/docker_mountpoint" }' | sudo tee /etc/docker/daemon.json && sudo systemctl start docker
         fi
     - name: Build packages
       env:
