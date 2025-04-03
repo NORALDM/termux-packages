@@ -27,14 +27,19 @@ TERMUX_PKG_SHA256=(
 	77aad87db2bf59bf25d1496c5fa92c92c93738d1a80fc6d53308db5850bf2818
 	ae4ea57516e606a73fd2745b21284c65d41d3851d05a2ac17c425d7488192ba0
 )
+TERMUX_PKG_SUGGESTS="jellyfin-ffmpeg"
 TERMUX_PKG_BUILD_DEPENDS="aspnetcore-targeting-pack-8.0, dotnet-targeting-pack-8.0, libcairo, pango, libjpeg-turbo, giflib, librsvg"
-TERMUX_PKG_DEPENDS="libc++, fontconfig, aspnetcore-runtime-8.0, dotnet-host, dotnet-runtime-8.0, sqlite, libexpat, libpng, libwebp, freetype"
+TERMUX_PKG_DEPENDS="libc++, fontconfig, aspnetcore-runtime-8.0, dotnet-host, dotnet-runtime-8.0, sqlite, libexpat, libpng, libwebp, freetype, ffmpeg | jellyfin-ffmpeg"
 TERMUX_PKG_SERVICE_SCRIPT=(
 	"jellyfin"
 	"${TERMUX_PREFIX}/bin/dotnet ${TERMUX_PREFIX}/share/jellyfin/jellyfin.dll --datadir ${TERMUX_ANDROID_HOME}/jellyfin"
 )
 TERMUX_PKG_BLACKLISTED_ARCHES="arm"
-
+TERMUX_PKG_RM_AFTER_INSTALL="
+opt/jellyfin/include
+opt/jellyfin/lib/pkgconfig
+opt/jellyfin/share
+"
 termux_step_post_get_source() {
 	local _idx;
 	local _sha256sums=();
@@ -174,7 +179,7 @@ termux_step_pre_configure() {
 
 	pushd jellyfin-ffmpeg-"${_FFMPEG_VERSION}"
 	local _ARCH=""
-	local _FFMPEG_PREFIX="${TERMUX_PREFIX}/lib/jellyfin-ffmpeg"
+	local _FFMPEG_PREFIX="${TERMUX_PREFIX}/opt/jellyfin"
 	local _FFMPEG_LDFLAGS="-Wl,-rpath=${_FFMPEG_PREFIX}/lib ${LDFLAGS}"
 	local _EXTRA_CONFIGURE_FLAGS=""
 	if [ "$TERMUX_ARCH" = "i686" ]; then
@@ -229,7 +234,6 @@ EOF
 	cd ..
 	LDFLAGS="${_FFMPEG_LDFLAGS}" make -j"$TERMUX_PKG_MAKE_PROCESSES"
 	make install
-	rm -rf "${_FFMPEG_PREFIX}/"{share,include}
 	popd
 }
 
@@ -244,9 +248,6 @@ termux_step_make_install() {
 	find "${TERMUX_PKG_BUILDDIR}/build" ! \( -name '*.so' -o -name 'jellyfin' -o -type d \) -exec chmod 0600 '{}' \;
 	find "${TERMUX_PKG_BUILDDIR}/build" \( -name 'jellyfin' -o -name '*.so' -o -type d \) -exec chmod 0700 '{}' \;
 	local _i=""
-	for _i in "$TERMUX_PREFIX/lib/jellyfin-ffmpeg/bin/ff"{probe,mpeg}; do
-		ln -s "$_i" "${TERMUX_PKG_BUILDDIR}/build"
-	done
 	mv "${TERMUX_PKG_BUILDDIR}/build" "${TERMUX_PREFIX}/lib/jellyfin"
 	ln -s "${TERMUX_PREFIX}/lib/jellyfin/jellyfin" "${TERMUX_PREFIX}/bin/jellyfin"
 }
