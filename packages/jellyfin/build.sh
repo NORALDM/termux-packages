@@ -120,7 +120,7 @@ termux_step_pre_configure() {
 	# ( export _args TERMUX_PREFIX TERMUX_STANDALONE_TOOLCHAIN && bash -il ) && exit
 	./tools/git-sync-deps
 	gn gen 'out' --args="${_args}"
-	ninja -v -C out SkiaSharp
+	ninja -C out SkiaSharp
 
 	_args_pre="target_os='android' \
 	target_cpu='${_target_cpu}' \
@@ -140,7 +140,7 @@ termux_step_pre_configure() {
 	_args="$(printf "%s\n" "${_args_pre}" | sed "s/'/\\\"/g" | sed "s/\\t//g")"
 
 	gn gen 'out' --args="${_args}"
-	ninja -v -C out HarfBuzzSharp
+	ninja -C out HarfBuzzSharp
 
 	cp out/libSkiaSharp.so out/libHarfBuzzSharp.so "$TERMUX_PKG_BUILDDIR"
 	popd
@@ -189,6 +189,7 @@ termux_step_pre_configure() {
 
 	cd builder
 	<build.sh awk '{print} $0 ~ /^FF_LIBS/ {exit}' > configure.sh
+	sed -i 's/docker/:/' configure.sh
 	cat <<'EOF' >>configure.sh
 cd ..
 ./configure --prefix="${_FFMPEG_PREFIX}" \
@@ -226,7 +227,9 @@ EOF
 }
 
 termux_step_make() {
+	pushd "$TERMUX_PKG_SRCDIR" && ls
 	dotnet publish "$TERMUX_PKG_SRCDIR"/Jellyfin.Server --configuration Release --runtime "$DOTNET_TARGET_NAME" --output "$TERMUX_PKG_BUILDDIR"/build --no-self-contained -p:DebugType=None
+	popd
 }
 
 termux_step_make_install() {
