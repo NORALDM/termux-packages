@@ -7,7 +7,6 @@ termux_extract_src_archive() {
 	for i in $(seq 0 $(( ${#PKG_SRCURL[@]}-1 ))); do
 		local file="$TERMUX_PKG_CACHEDIR/$(basename "${PKG_SRCURL[$i]}")"
 		local folder
-		set -x
 		set +o pipefail
 		if [ "${file##*.}" = zip ]; then
 			folder=$(unzip -qql "$file" | head -n1 | tr -s ' ' | cut -d' ' -f5-)
