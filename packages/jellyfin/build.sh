@@ -69,7 +69,7 @@ termux_step_post_get_source() {
 termux_step_pre_configure() {
 	termux_setup_dotnet; termux_setup_gn; termux_setup_nodejs
 	pushd jellyfin-web
-	npm install --global cross-env
+	npm install
 	npm run build:production
 	cp -R ./dist "$TERMUX_PKG_BUILDDIR/jellyfin-web"
 	popd
