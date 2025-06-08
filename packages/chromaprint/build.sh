@@ -5,14 +5,16 @@ TERMUX_PKG_MAINTAINER="@termux"
 _COMMIT=aa67c95b9e486884a6d3ee8b0c91207d8c2b0551
 _COMMIT_DATE=20221217
 TERMUX_PKG_VERSION=1.5.1-p${_COMMIT_DATE}
-TERMUX_PKG_REVISION=2
+TERMUX_PKG_REVISION=3
 TERMUX_PKG_SRCURL=git+https://github.com/acoustid/chromaprint
 TERMUX_PKG_SHA256=5a880f6e976fdbbfbc1d5487d27cf59fba7398c675c6cb5069aaf3d3cff716a7
 TERMUX_PKG_GIT_BRANCH=master
 TERMUX_PKG_DEPENDS="ffmpeg, libc++"
+TERMUX_PKG_BUILD_DEPENDS="fftw"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DCMAKE_BUILD_TYPE=Release
 -DBUILD_SHARED_LIBS=ON
+-DFFT_LIB=fftw3
 -DBUILD_TOOLS=ON
 -DBUILD_TESTS=OFF
 "
@@ -33,4 +35,8 @@ termux_step_post_get_source() {
 	if [[ "${s}" != "${TERMUX_PKG_SHA256}  "* ]]; then
 		termux_error_exit "Checksum mismatch for source files."
 	fi
+}
+
+termux_step_pre_configure() {
+	TERMUX_PKG_DEPENDS+=", libchromaprint"
 }
