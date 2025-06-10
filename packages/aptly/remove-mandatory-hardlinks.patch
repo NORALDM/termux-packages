@@ -1,0 +1,25 @@
+--- a/context/context.go
++++ b/context/context.go
+@@ -414,7 +414,7 @@ func (context *AptlyContext) GetPublishedStorage(name string) aptly.PublishedSto
+ 	publishedStorage, ok := context.publishedStorages[name]
+ 	if !ok {
+ 		if name == "" {
+-			publishedStorage = files.NewPublishedStorage(filepath.Join(context.config().GetRootDir(), "public"), "hardlink", "")
++			publishedStorage = files.NewPublishedStorage(filepath.Join(context.config().GetRootDir(), "public"), "symlink", "")
+ 		} else if strings.HasPrefix(name, "filesystem:") {
+ 			params, ok := context.config().FileSystemPublishRoots[name[11:]]
+ 			if !ok {
+--- a/deb/index_files.go
++++ b/deb/index_files.go
+@@ -203,9 +203,9 @@ func packageIndexByHash(file *indexFile, ext string, hash string, sum string) er
+ 	}
+ 
+ 	// create the link
+-	err = file.parent.publishedStorage.HardLink(src, sumfilePath)
++	err = file.parent.publishedStorage.SymLink(src, sumfilePath)
+ 	if err != nil {
+-		return fmt.Errorf("Acquire-By-Hash: error creating hardlink %s: %s", sumfilePath, err)
++		return fmt.Errorf("Acquire-By-Hash: error creating symlink %s: %s", sumfilePath, err)
+ 	}
+ 
+ 	// if a previous index file already exists exists, backup symlink
