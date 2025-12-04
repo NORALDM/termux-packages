@@ -38,7 +38,7 @@ ci_artifact_url() {
 	curl --silent \
 		-H "Authorization: token ${GITHUB_TOKEN}" \
 		-H "Accept: application/vnd.github.v3+json" \
-		"https://api.github.com/repos/termux/termux-packages/actions/runs/${1}/artifacts" \
+		"https://api.github.com/repos/NORALDM/termux-packages/actions/runs/${1}/artifacts" \
 		| jq -r '[.artifacts[]? | select(.name | startswith("debs-'"${TARGET_ARCH}"'")) | .archive_download_url][0] // error' \
 	|| return $?
 }
@@ -92,7 +92,7 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 	# We should obtain data about all commits in this push to check that they are from the same PR if any
 	RELATED_PRS_QUERY="
 	query {
-		repository(owner: \"termux\", name: \"termux-packages\") {
+		repository(owner: \"NORALDM\", name: \"termux-packages\") {
 		$(
 			for commit in "${COMMITS[@]}"; do
 				# Add a query for this commit with the shorthash as the label
@@ -124,7 +124,7 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 			 .edges[0].node.body)' <<< "$RESPONSE" || :)
 	[[ -n "${PR_HEAD_COMMIT:-}" ]] || infoexit "failed to read associated PR head commit, not performing CI fast path"
 
-	echo "::group::Detected PR #${PRS[0]}: ${PR_COMMIT_TITLE} — https://github.com/termux/termux-packages/pull/${PRS[0]}"
+	echo "::group::Detected PR #${PRS[0]}: ${PR_COMMIT_TITLE} — https://github.com/NORALDM/termux-packages/pull/${PRS[0]}"
 	echo "${PR_COMMIT_BODY}"
 	echo "::endgroup::"
 
@@ -206,7 +206,7 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 		# The same commit can be used in more than one PR or even push
 		WORKFLOW_PR_QUERY="
 		query {
-			repository(owner: \"termux\", name: \"termux-packages\") {
+			repository(owner: \"NORALDM\", name: \"termux-packages\") {
 				object(oid: \"$PR_HEAD_COMMIT\") { ...workflowRun }
 			}
 		}
@@ -228,7 +228,7 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 				| .workflowRun.databaseId][0] // empty' <<< "$RESPONSE" || :
 		)"
 		if [[ -n "${WORKFLOW_ID}" ]]; then
-			echo "We can safely reuse CI artifacts from https://github.com/termux/termux-packages/actions/runs/${WORKFLOW_ID}"
+			echo "We can safely reuse CI artifacts from https://github.com/NORALDM/termux-packages/actions/runs/${WORKFLOW_ID}"
 			if download_ci_artifacts "${WORKFLOW_ID}"; then
 				# Notify CI about skipping packages building because we reuse PR artifact.
 				echo "skip-building=true" >> "${GITHUB_OUTPUT:-/dev/null}"
@@ -253,7 +253,7 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 	# to allow CI reuse artifacts of other PRs in the case if current PR diverged from another PR branch.
 	WORKFLOW_COMMITS_QUERY="
 	query {
-		repository(owner: \"termux\", name: \"termux-packages\") {
+		repository(owner: \"NORALDM\", name: \"termux-packages\") {
 		$(
 			for commit in "${COMMITS[@]}"; do
 				# Add a query for this commit with the shorthash as the label
@@ -281,11 +281,13 @@ readarray -t COMMITS < <(git rev-list --no-merges "$OLD_COMMIT..$HEAD_COMMIT" ||
 					.status == "COMPLETED"
 				) | .workflowRun.databaseId][0] // empty' <<< "$RESPONSE"
 		)"
+		printf "%s\n" "${COMMITS[@]}"
+		printf "%s\n" "$RESPONSE"
 		# No need to go on if we found a match.
 		[[ -z "${WORKFLOW_ID:-}" ]] || break
 	done
 	if [[ -n "${WORKFLOW_ID}" ]]; then
-		echo "We can safely reuse CI artifacts from https://github.com/termux/termux-packages/actions/runs/${WORKFLOW_ID}"
+		echo "We can safely reuse CI artifacts from https://github.com/NORALDM/termux-packages/actions/runs/${WORKFLOW_ID}"
 		echo "CI artifact URL is $(ci_artifact_url "${WORKFLOW_ID}" || infoexit "Failed to get CI artifact URL")"
 	else
 		echo "We can not reuse CI artifacts since no relevant CI runs were found"
